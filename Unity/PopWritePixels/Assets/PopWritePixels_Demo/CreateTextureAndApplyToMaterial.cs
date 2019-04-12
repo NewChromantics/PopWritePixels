@@ -14,23 +14,16 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 	PopWritePixels.JobCache WritePixelsJob;
 	byte[] PixelBytes;
 
-	void OnEnable()
+	byte[] GeneratePixelBytes(int Width,int Height,int ComponentCount,Color32[] PixelColours)
 	{
-		//	make new texture
-		NewTexture = new Texture2D(TextureWidth, TextureHeight, TextureFormat, MipMap);
-		NewTexture.filterMode = TextureFilterMode;
-		var Mat = this.GetComponent<MeshRenderer>().material;
-		Mat.mainTexture = NewTexture;
+		UnityEngine.Profiling.Profiler.BeginSample("GeneratePixelBytes(" + Width+"x"+Height+")");
 
-		//	generate pixels
-		if (WriteColours.Count == 0)
-			WriteColours.Add(Color.cyan);
-		var PixelColours = new Color32[TextureWidth * TextureHeight];
-		PixelBytes = new byte[TextureWidth*TextureHeight*4];
+		//var PixelColours = new Color32[Width * Height];
+		var PixelBytes = new byte[Width * Height * ComponentCount];
 		for (int y = 0; y < TextureHeight; y++)
 		{
 			var Colour = WriteColours[y % WriteColours.Count];
-			var Colour32 = new Color32((byte)(Colour.r * 255), (byte)(Colour.g * 255), (byte)(Colour.b * 255), (byte)(Colour.a * 255) );
+			var Colour32 = new Color32((byte)(Colour.r * 255), (byte)(Colour.g * 255), (byte)(Colour.b * 255), (byte)(Colour.a * 255));
 			for (int x = 0; x < TextureWidth; x++)
 			{
 				var PixelIndex = (x + (y * TextureWidth)) * 4;
@@ -38,15 +31,60 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 				PixelBytes[PixelIndex + 0] = Colour32.g;
 				PixelBytes[PixelIndex + 0] = Colour32.b;
 				PixelBytes[PixelIndex + 0] = Colour32.a;
-				PixelColours[x + (y * TextureWidth)] = Colour32;
+				if (PixelColours!=null)
+					PixelColours[x + (y * TextureWidth)] = Colour32;
 			}
 		}
-		if ( NewTexture.mipmapCount == 0 )
+		UnityEngine.Profiling.Profiler.EndSample();
+		return PixelBytes;
+	}
+
+	IEnumerator Run()
+	{
+		yield return new WaitForSeconds(1);
+
+		//	make new texture
+		UnityEngine.Profiling.Profiler.BeginSample("Create Texture");
+		NewTexture = new Texture2D(TextureWidth, TextureHeight, TextureFormat, MipMap);
+		UnityEngine.Profiling.Profiler.EndSample();
+		NewTexture.filterMode = TextureFilterMode;
+		var Mat = this.GetComponent<MeshRenderer>().material;
+		Mat.mainTexture = NewTexture;
+		yield return null;
+		
+		//	generate pixels
+		if (WriteColours.Count == 0)
+			WriteColours.Add(Color.cyan);
+
+		PixelBytes = GeneratePixelBytes(TextureWidth, TextureHeight, 4, null);
+		yield return null;
+
+		//	show preview
+		if (NewTexture.mipmapCount == 0)
+		{
+			UnityEngine.Profiling.Profiler.BeginSample("LoadRawTextureData()");
 			NewTexture.LoadRawTextureData(PixelBytes);
+			NewTexture.Apply();
+			UnityEngine.Profiling.Profiler.EndSample();
+		}
 		else
+		{
+			var PixelColours = new Color32[TextureWidth * TextureHeight];
+			var PixelBytes = GeneratePixelBytes(TextureWidth, TextureHeight, 4, PixelColours);
+			UnityEngine.Profiling.Profiler.BeginSample("SetPixels32()");
 			NewTexture.SetPixels32(PixelColours);
-		NewTexture.Apply();
+			NewTexture.Apply();
+			UnityEngine.Profiling.Profiler.EndSample();
+		}
+		yield return null;
+
 		WritePixelsJob = PopWritePixels.WritePixelsAsync(NewTexture, PixelBytes);
+		yield return null;
+	}
+
+	void OnEnable()
+	{
+		StartCoroutine(Run());		
 	}
 
 	void Update()

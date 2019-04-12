@@ -293,7 +293,7 @@ MonoBehaviour:
   TextureHeight: 8192
   TextureFilterMode: 0
   TextureFormat: 4
-  MipMap: 1
+  MipMap: 0
   WriteColours:
   - {r: 1, g: 0, b: 0, a: 1}
   - {r: 0, g: 1, b: 0, a: 1}
