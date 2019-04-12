@@ -32,7 +32,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>echo f | xcopy /Y $(TargetPath) $(ProjectDir)..\Unity\PopReadPixels\Assets\PopReadPixels\$(Platform)\PopReadPixels.dll</Command>
+      <Command>echo f | xcopy /Y $(TargetPath) $(ProjectDir)..\Unity\PopWritePixels\Assets\PopWritePixels\$(Platform)\PopWritePixels.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

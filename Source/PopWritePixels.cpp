@@ -1,5 +1,4 @@
-#include "PopReadPixels.hpp"
-#include "PopDebug.hpp"
+#include "PopWritePixels.h"
 #include <sstream>
 #include <algorithm>
 #include <functional>
@@ -9,7 +8,7 @@
 #include <SoyOpengl.h>
 #include <SoyOpenglContext.h>
 #endif
-
+/*
 #if defined(ENABLE_DIRECTX)
 #include <SoyDirectx.h>
 #endif
@@ -17,7 +16,8 @@
 #if defined(ENABLE_DIRECTX9)
 #include <SoyDirectx9.h>
 #endif
-
+*/
+/*
 #include <SoyPool.h>
 
 class TCache
@@ -137,16 +137,12 @@ __export int ReadPixelFromTexture2D(void* TexturePtr,uint8_t* PixelData,int Pixe
 	}
 	catch(const std::exception& e)
 	{
-		std::stringstream Error;
-		Error << "Exception in " << __func__ << "; " << e.what();
-		PopUnity::DebugLog( Error.str() );
+		std::Debug << "Exception in " << __func__ << "; " << e.what() << std::endl;
 		return -1;
 	}
 	catch(...)
 	{
-		std::stringstream Error;
-		Error << "Unknown exception in " << __func__;
-		PopUnity::DebugLog( Error.str() );
+		std::Debug << "Unknown exception in " << __func__ << std::endl;
 		return -1;
 	}
 }
@@ -162,16 +158,12 @@ __export int ReadPixelFromRenderTexture(void* TexturePtr,uint8_t* PixelData,int 
 	}
 	catch(const std::exception& e)
 	{
-		std::stringstream Error;
-		Error << "Exception in " << __func__ << "; " << e.what();
-		PopUnity::DebugLog( Error.str() );
+		std::Debug << "Exception in " << __func__ << "; " << e.what() << std::endl;
 		return -1;
 	}
 	catch(...)
 	{
-		std::stringstream Error;
-		Error << "Unknown exception in " << __func__ ;
-		PopUnity::DebugLog( Error.str() );
+		std::Debug << "Unknown Exception in " << __func__ << std::endl;
 		return -1;
 	}
 }
@@ -327,7 +319,6 @@ __api(void) ReadPixelsFromCache(int CacheIndex)
 	}
 }
 
-/*
 __export int AllocCacheRenderTexture(void* TexturePtr,int Width,int Height,Unity::RenderTexturePixelFormat::Type PixelFormat)
 {
 	try
@@ -353,8 +344,7 @@ __export int AllocCacheRenderTexture(void* TexturePtr,int Width,int Height,Unity
 	}
 }
 
-*/
-/*
+
 __export int AllocCacheTexture2D(void* TexturePtr,uint8_t* PixelData,uint8_t* PixelRevision,uint8_t* CacheIndex,int PixelDataSize,int Width,int Height,int Channels,Unity::Texture2DPixelFormat::Type PixelFormat)
 {
 	try
@@ -381,7 +371,7 @@ __export int AllocCacheTexture2D(void* TexturePtr,uint8_t* PixelData,uint8_t* Pi
 		return nullptr;
 	}
 }
-*/
+
 
 __export UnityRenderingEvent GetReadPixelsFromCacheFunc()
 {
@@ -452,3 +442,4 @@ __export int ReadPixelFloatsFromCache(int CacheIndex,float* ByteData,int ByteDat
 
 
 
+*/

@@ -19,16 +19,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Source\PopDebug.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Source\PopWritePixels.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Source\PopUnity.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Source\TStringBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\SoyLib\src\memheap.cpp">
@@ -94,20 +85,11 @@
     <ClCompile Include="..\Source\SoyLib\src\SoyMediaFormat.cpp">
       <Filter>Source Files\SoyLib</Filter>
     </ClCompile>
+    <ClCompile Include="..\Source\PopWritePixels.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Source\PopDebug.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Source\PopReadPixels.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Source\PopUnity.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Source\TStringBuffer.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Source\Unity\IUnityGraphics.h">
       <Filter>Source Files\Unity</Filter>
     </ClInclude>
@@ -203,6 +185,12 @@
     </ClInclude>
     <ClInclude Include="..\Source\SoyLib\src\SoyMediaFormat.h">
       <Filter>Source Files\SoyLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\PopWritePixels.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\PopUnity.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

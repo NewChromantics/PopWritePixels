@@ -19,16 +19,25 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Source\PopDebug.cpp" />
-    <ClCompile Include="..\Source\PopReadPixels.cpp" />
+    <ClCompile Include="..\Source\PopWritePixels.cpp" />
     <ClCompile Include="..\Source\PopUnity.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\GL\glew.c" />
     <ClCompile Include="..\Source\SoyLib\src\memheap.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\SoyArray.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\SoyAssert.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\SoyDebug.cpp" />
-    <ClCompile Include="..\Source\SoyLib\src\SoyDirectx.cpp" />
-    <ClCompile Include="..\Source\SoyLib\src\SoyDirectx9.cpp" />
+    <ClCompile Include="..\Source\SoyLib\src\SoyDirectx.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\Source\SoyLib\src\SoyDirectx9.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\Source\SoyLib\src\SoyEvent.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\SoyGraphics.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\SoyMediaFormat.cpp" />
@@ -42,13 +51,16 @@
     <ClCompile Include="..\Source\SoyLib\src\SoyTime.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\SoyTypes.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\SoyUniform.cpp" />
-    <ClCompile Include="..\Source\SoyLib\src\SoyUnity.cpp" />
-    <ClCompile Include="..\Source\TStringBuffer.cpp" />
+    <ClCompile Include="..\Source\SoyLib\src\SoyUnity.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Source\PopDebug.hpp" />
-    <ClInclude Include="..\Source\PopReadPixels.hpp" />
-    <ClInclude Include="..\Source\PopUnity.hpp" />
+    <ClInclude Include="..\Source\PopWritePixels.h" />
+    <ClInclude Include="..\Source\PopUnity.h" />
     <ClInclude Include="..\Source\SoyLib\src\array.hpp" />
     <ClInclude Include="..\Source\SoyLib\src\bufferarray.hpp" />
     <ClInclude Include="..\Source\SoyLib\src\GL\glew.h" />
@@ -58,8 +70,18 @@
     <ClInclude Include="..\Source\SoyLib\src\SoyArray.h" />
     <ClInclude Include="..\Source\SoyLib\src\SoyAssert.h" />
     <ClInclude Include="..\Source\SoyLib\src\SoyDebug.h" />
-    <ClInclude Include="..\Source\SoyLib\src\SoyDirectx.h" />
-    <ClInclude Include="..\Source\SoyLib\src\SoyDirectx9.h" />
+    <ClInclude Include="..\Source\SoyLib\src\SoyDirectx.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\Source\SoyLib\src\SoyDirectx9.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="..\Source\SoyLib\src\SoyEvent.h" />
     <ClInclude Include="..\Source\SoyLib\src\SoyGraphics.h" />
     <ClInclude Include="..\Source\SoyLib\src\SoyMediaFormat.h" />
@@ -74,8 +96,12 @@
     <ClInclude Include="..\Source\SoyLib\src\SoyTypes.h" />
     <ClInclude Include="..\Source\SoyLib\src\SoyTypes_Windows.h" />
     <ClInclude Include="..\Source\SoyLib\src\SoyUniform.h" />
-    <ClInclude Include="..\Source\SoyLib\src\SoyUnity.h" />
-    <ClInclude Include="..\Source\TStringBuffer.hpp" />
+    <ClInclude Include="..\Source\SoyLib\src\SoyUnity.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="..\Source\Unity\IUnityGraphics.h" />
     <ClInclude Include="..\Source\Unity\IUnityGraphicsD3D11.h" />
     <ClInclude Include="..\Source\Unity\IUnityGraphicsD3D12.h" />
@@ -84,7 +110,12 @@
     <ClInclude Include="..\Source\Unity\IUnityInterface.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Unity\PopWritePixels\Assets\PopWritePixels\PopWritePixels.cs" />
+    <None Include="..\Unity\PopWritePixels\Assets\PopWritePixels\PopWritePixels.cs">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D3E8A495-934B-437E-AB4B-0C956F4E24B4}</ProjectGuid>

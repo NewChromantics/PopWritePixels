@@ -1,7 +1,11 @@
 #pragma once
 
-#include "PopUnity.hpp"
+#include "PopUnity.h"
 #include <functional>
+
+/*
+__export int					WritePixelsToTexture2D(void* TexturePtr,uint8_t* PixelData,int PixelDataSize,int Width,int Height,int Channels,Unity::RenderTexturePixelFormat::Type PixelFormat);
+
 
 
 __export int					ReadPixelFromRenderTexture(void* TexturePtr,uint8_t* PixelData,int PixelDataSize,int* WidthHeightChannels,Unity::RenderTexturePixelFormat::Type PixelFormat);
@@ -15,5 +19,5 @@ __api(void)						ReadPixelsFromCache(int Cache);
 
 __export int					ReadPixelBytesFromCache(int Cache,uint8_t* ByteData,int ByteDataSize);
 __export int					ReadPixelFloatsFromCache(int Cache,float* FloatData,int FloatDataSize);
-
+*/
 
