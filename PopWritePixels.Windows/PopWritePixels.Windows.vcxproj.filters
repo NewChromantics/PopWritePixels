@@ -22,7 +22,7 @@
     <ClCompile Include="..\Source\PopDebug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\PopReadPixels.cpp">
+    <ClCompile Include="..\Source\PopWritePixels.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Source\PopUnity.cpp">
@@ -206,7 +206,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Unity\PopReadPixels\Assets\PopReadPixels\PopReadPixels.cs">
+    <None Include="..\Unity\PopWritePixels\Assets\PopWritePixels\PopWritePixels.cs">
       <Filter>c# Source</Filter>
     </None>
   </ItemGroup>
