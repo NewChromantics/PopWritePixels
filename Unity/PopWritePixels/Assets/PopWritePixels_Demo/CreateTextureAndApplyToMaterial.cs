@@ -91,13 +91,16 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 	{
 		if (WritePixelsJob==null)
 		{
-			throw new System.Exception("No write job");
+			//	waiting...
+			//throw new System.Exception("No write job");
+			return;
 		}
 
 		if (WritePixelsJob.HasFinished())
 		{
 			Debug.Log("Finished writing pixels");
 			this.enabled = false;
+			//NewTexture.UpdateExternalTexture();
 			WritePixelsJob.Release();
 		}
 	}

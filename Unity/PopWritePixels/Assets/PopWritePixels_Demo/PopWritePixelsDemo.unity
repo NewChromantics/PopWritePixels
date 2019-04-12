@@ -289,8 +289,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad16440fcb8cc114e87238c2d5bc48a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TextureWidth: 8192
-  TextureHeight: 8192
+  TextureWidth: 16384
+  TextureHeight: 16384
   TextureFilterMode: 0
   TextureFormat: 4
   MipMap: 0

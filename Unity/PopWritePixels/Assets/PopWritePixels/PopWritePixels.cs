@@ -24,10 +24,10 @@ public static class PopWritePixels
 	private static extern void ReleaseCache(int Cache);
 
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
-	private static extern IntPtr GetWritePixelsWithCacheFunc();
+	private static extern IntPtr GetWritePixelsToCacheFunc();
 
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
-	private static extern bool SetWritePixelsBytes(int Cache, byte[] ByteData, int ByteDataSize);
+	private static extern bool QueueWritePixels(int Cache, byte[] ByteData, int ByteDataSize);
 
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
 	private static extern bool HasCacheWrittenBytes(int Cache);
@@ -50,7 +50,7 @@ public static class PopWritePixels
 			if ( CacheIndex == -1 )
 				throw new System.Exception("Failed to allocate cache index");
 
-			PluginFunction = GetWritePixelsWithCacheFunc();
+			PluginFunction = GetWritePixelsToCacheFunc();
 		}
 
 		~JobCache()
@@ -65,7 +65,7 @@ public static class PopWritePixels
 			if (Copy)
 				throw new System.Exception("Currently not copying, assuming caller won't delete bytes over the next frame");
 
-			if (!SetWritePixelsBytes(CacheIndex.Value, Bytes, Bytes.Length))
+			if (!QueueWritePixels(CacheIndex.Value, Bytes, Bytes.Length))
 				throw new System.Exception("SetCacheBytes returned error");
 
 			//	queue a write

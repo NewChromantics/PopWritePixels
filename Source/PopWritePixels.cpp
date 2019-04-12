@@ -18,16 +18,25 @@
 #endif
 */
 
+class TPendingBytes
+{
+public:
+	uint8_t*	mBytes = 0;
+	size_t		mBytesSize = 0;
+	bool		mWritten = false;
+};
 
 class TCache
 {
 public:
 	bool			Used() const		{	return mTexturePtr != nullptr;	}
 	void			Release()			{	mTexturePtr = nullptr;	}
-	
+	bool			HasWritten() const	{	return mPendingBytes ? mPendingBytes->mWritten : false; }
+
 public:
 	void*			mTexturePtr = nullptr;
 	SoyPixelsMeta	mTextureMeta;
+	std::shared_ptr<TPendingBytes>	mPendingBytes;
 };
 
 
@@ -216,7 +225,6 @@ int AllocCacheRenderTexture(void* TexturePtr,SoyPixelsMeta Meta)
 	auto& Cache = PopWritePixels::AllocCache(CacheIndex);
 	Cache.mTexturePtr = TexturePtr;
 	Cache.mTextureMeta = Meta;
-	//Cache.mTextureMeta.DumbSetFormat( SoyPixelsFormat::GetByteFormat(Meta.GetFormat()) );
 	return CacheIndex;
 }
 /*
@@ -252,55 +260,41 @@ __export int AllocCacheTexture2D(void* TexturePtr,int Width,int Height,Unity::Te
 	};
 	return SafeCall( Function, __func__, -1 );
 }
-/*
 
 
 __export void ReleaseCache(int Cache)
 {
-	try
+	auto Function = [&]()
 	{
-		PopReadPixels::ReleaseCache( Cache );
-	}
-	catch(const std::exception& e)
-	{
-		std::stringstream Error;
-		Error << "Exception in " << __func__ << "; " << e.what();
-		PopUnity::DebugLog( Error.str() );
-	}
-	catch(...)
-	{
-		std::stringstream Error;
-		Error << "Unknown exception in " << __func__ << "";
-		PopUnity::DebugLog( Error.str() );
-	}
+		PopWritePixels::ReleaseCache( Cache );
+		return 0;
+	};
+	SafeCall( Function, __func__, 0 );
 }
 
 
-__api(void) ReadPixelsFromCache(int CacheIndex)
+__api(void) WritePixelsToCache(int CacheIndex)
 {
-	try
+	auto Function = [&]()
 	{
-		std::Debug << "ReadPixelsFromCache(" << CacheIndex << ")" << std::endl;
-		auto& Cache = PopReadPixels::GetCache(CacheIndex);
+		std::Debug << "WritePixelsWithCache(" << CacheIndex << ")" << std::endl;
+		auto& Cache = PopWritePixels::GetCache(CacheIndex);
+		
+		//	write any pending pixels
+		if ( !Cache.mPendingBytes )
+			throw Soy::AssertException("Cache has no pending pixels");
 
+		//	do write
+		/*
 		std::lock_guard<std::mutex> Lock( Cache.mLastReadPixelsLock );
 		ReadPixelFromTexture( Cache.mTexturePtr, Cache.mLastReadPixels, Cache.mTextureMeta );
 		Cache.OnRead();
-	}
-	catch(const std::exception& e)
-	{
-		std::stringstream Error;
-		Error << "Exception in " << __func__ << "; " << e.what();
-		PopUnity::DebugLog( Error.str() );
-	}
-	catch(...)
-	{
-		std::stringstream Error;
-		Error << "Unknown exception in " << __func__ << "";
-		PopUnity::DebugLog( Error.str() );
-	}
+		*/
+		return 0;
+	};
+	SafeCall( Function, __func__, 0 );
 }
-
+/*
 __export int AllocCacheRenderTexture(void* TexturePtr,int Width,int Height,Unity::RenderTexturePixelFormat::Type PixelFormat)
 {
 	try
@@ -353,13 +347,41 @@ __export int AllocCacheTexture2D(void* TexturePtr,uint8_t* PixelData,uint8_t* Pi
 		return nullptr;
 	}
 }
+*/
 
-
-__export UnityRenderingEvent GetReadPixelsFromCacheFunc()
+__export UnityRenderingEvent GetWritePixelsToCacheFunc()
 {
-	return ReadPixelsFromCache;
+	return WritePixelsToCache;
 }
 
+__export bool QueueWritePixels(int CacheIndex,uint8_t* ByteData, int ByteDataSize)
+{
+	auto Function = [&]()
+	{
+		std::Debug << "WritePixels(" << CacheIndex << ")" << std::endl;
+		auto& Cache = PopWritePixels::GetCache(CacheIndex);
+
+		Cache.mPendingBytes.reset(new TPendingBytes());
+		Cache.mPendingBytes->mBytes = ByteData;
+		Cache.mPendingBytes->mBytesSize = ByteDataSize;
+		return true;
+	};
+	return SafeCall( Function, __func__, false );
+}
+
+__export bool HasCacheWrittenBytes(int CacheIndex)
+{
+	auto Function = [&]()
+	{
+		std::Debug << "WritePixels(" << CacheIndex << ")" << std::endl;
+		auto& Cache = PopWritePixels::GetCache(CacheIndex);
+
+		return Cache.HasWritten();
+	};
+	return SafeCall( Function, __func__, false );
+}
+
+/*
 __export int ReadPixelBytesFromCache(int CacheIndex,uint8_t* ByteData,int ByteDataSize)
 {
 	try
@@ -387,41 +409,4 @@ __export int ReadPixelBytesFromCache(int CacheIndex,uint8_t* ByteData,int ByteDa
 		return -1;
 	}
 }
-
-
-__export int ReadPixelFloatsFromCache(int CacheIndex,float* ByteData,int ByteDataSize)
-{
-	try
-	{
-		auto& Cache = PopReadPixels::GetCache( CacheIndex );
-		std::lock_guard<std::mutex> Lock( Cache.mLastReadPixelsLock );
-		if ( !Cache.mLastReadPixels.IsValid() )
-			return -1;
-		auto ByteDataArray = GetRemoteArray( ByteData, static_cast<size_t>(ByteDataSize) );
-		const auto& SourceByteArray = Cache.mLastReadPixels.GetPixelsArray();
-		
-		//	cast to float. Remember to check alignment etc
-		auto SourceFloatArray = GetArrayBridge(SourceByteArray).GetSubArray<float>( 0, SourceByteArray.GetSize() / 4 );
-		ByteDataArray.Copy( SourceFloatArray );
-		
-		return Cache.mRevision;
-	}
-	catch(const std::exception& e)
-	{
-		std::stringstream Error;
-		Error << "Exception in " << __func__ << " " << e.what();
-		PopUnity::DebugLog( Error.str() );
-		return -1;
-	}
-	catch(...)
-	{
-		std::stringstream Error;
-		Error << "Unknown exception in " << __func__;
-		PopUnity::DebugLog( Error.str() );
-		return -1;
-	}
-}
-
-
-
 */

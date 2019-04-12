@@ -22,8 +22,8 @@ __export int					ReadPixelFloatsFromCache(int Cache,float* FloatData,int FloatDa
 */
 __export int AllocCacheTexture2D(void* TexturePtr, int Width, int Height,Unity::Texture2DPixelFormat::Type PixelFormat);
 __export void ReleaseCache(int Cache);
-__export void* GetWritePixelsWithCacheFunc();
-__export bool SetWritePixelsBytes(int Cache,uint8_t* ByteData, int ByteDataSize);
+__export UnityRenderingEvent GetWritePixelsToCacheFunc();
+__export bool QueueWritePixels(int Cache,uint8_t* ByteData, int ByteDataSize);
 __export bool HasCacheWrittenBytes(int Cache);
 
 
