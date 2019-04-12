@@ -17,58 +17,55 @@
 #include <SoyDirectx9.h>
 #endif
 */
-/*
-#include <SoyPool.h>
+
 
 class TCache
 {
 public:
-	TCache() :
-		mTexturePtr	( nullptr ),
-		mRevision	( 0 )
-	{
-	}
-	
 	bool			Used() const		{	return mTexturePtr != nullptr;	}
 	void			Release()			{	mTexturePtr = nullptr;	}
-	void			OnRead()			{	mRevision++;	}
 	
 public:
-	void*			mTexturePtr;
+	void*			mTexturePtr = nullptr;
 	SoyPixelsMeta	mTextureMeta;
-
-	uint32_t		mRevision;
-	SoyPixels		mLastReadPixels;
-	std::mutex		mLastReadPixelsLock;
 };
 
 
-namespace PopReadPixels
+namespace PopWritePixels
 {
 	//	gr: could be big as it's just sitting in memory, but made small so we
 	//	can ensure client is releasing in case in future we NEED releasing
 #define MAX_CACHES	200
 	TCache		gCaches[MAX_CACHES];
-	
+
 	TCache&		AllocCache(int& CacheIndex);
 	TCache&		GetCache(int CacheIndex);
 	void		ReleaseCache(uint32_t CacheIndex);
-
-
-	//	gr: probably need some proper cleanup for this
-#if defined(ENABLE_DIRECTX)
-	std::shared_ptr<TPool<Directx::TTexture>>	DirectxTexturePool;
-#endif
-
-#if defined(ENABLE_DIRECTX9)
-	std::shared_ptr<TPool<Directx9::TTexture>>	Directx9TexturePool;
-#endif
 }
 
 
 
+template<typename RETURN,typename FUNC>
+RETURN SafeCall(FUNC Function,const char* FunctionName,RETURN ErrorReturn)
+{
+	try
+	{
+		return Function();
+	}
+	catch(std::exception& e)
+	{
+		std::Debug << FunctionName << " exception: " << e.what() << std::endl;
+		return ErrorReturn;
+	}
+	catch(...)
+	{
+		std::Debug << FunctionName << " unknown exception." << std::endl;
+		return ErrorReturn;
+	}
+}
 
 
+/*
 int ReadPixelFromTexture(void* TexturePtr,SoyPixelsImpl& Pixels,SoyPixelsMeta TextureMeta)
 {
 #if defined(ENABLE_OPENGL)
@@ -170,8 +167,8 @@ __export int ReadPixelFromRenderTexture(void* TexturePtr,uint8_t* PixelData,int 
 
 
 
-
-TCache& PopReadPixels::AllocCache(int& CacheIndex)
+*/
+TCache& PopWritePixels::AllocCache(int& CacheIndex)
 {
 	for ( int i=0;	i<MAX_CACHES;	i++ )
 	{
@@ -186,7 +183,7 @@ TCache& PopReadPixels::AllocCache(int& CacheIndex)
 	throw Soy::AssertException("No free caches");
 }
 
-TCache& PopReadPixels::GetCache(int CacheIndex)
+TCache& PopWritePixels::GetCache(int CacheIndex)
 {
 	if ( CacheIndex < 0 || CacheIndex >= MAX_CACHES )
 	{
@@ -203,7 +200,7 @@ TCache& PopReadPixels::GetCache(int CacheIndex)
 }
 
 
-void PopReadPixels::ReleaseCache(uint32_t CacheIndex)
+void PopWritePixels::ReleaseCache(uint32_t CacheIndex)
 {
 	if ( CacheIndex >= MAX_CACHES )
 	{
@@ -213,18 +210,16 @@ void PopReadPixels::ReleaseCache(uint32_t CacheIndex)
 	gCaches[CacheIndex].Release();
 }
 
-
-
-int AllocCacheRenderTexture(void* TexturePtr,SoyPixelsMeta Meta,bool ReadAsFloat)
+int AllocCacheRenderTexture(void* TexturePtr,SoyPixelsMeta Meta)
 {
 	int CacheIndex = -1;
-	auto& Cache = PopReadPixels::AllocCache(CacheIndex);
+	auto& Cache = PopWritePixels::AllocCache(CacheIndex);
 	Cache.mTexturePtr = TexturePtr;
 	Cache.mTextureMeta = Meta;
-	Cache.mTextureMeta.DumbSetFormat( ReadAsFloat ? SoyPixelsFormat::GetFloatFormat(Meta.GetFormat()) : SoyPixelsFormat::GetByteFormat(Meta.GetFormat()) );
+	//Cache.mTextureMeta.DumbSetFormat( SoyPixelsFormat::GetByteFormat(Meta.GetFormat()) );
 	return CacheIndex;
 }
-
+/*
 __export int AllocCacheRenderTexture(void* TexturePtr,int Width,int Height,Unity::boolean ReadAsFloat,Unity::RenderTexturePixelFormat::Type PixelFormat)
 {
 	try
@@ -247,30 +242,17 @@ __export int AllocCacheRenderTexture(void* TexturePtr,int Width,int Height,Unity
 		return -1;
 	}
 }
-
-__export int AllocCacheTexture2D(void* TexturePtr,int Width,int Height,Unity::boolean ReadAsFloat,Unity::Texture2DPixelFormat::Type PixelFormat)
+*/
+__export int AllocCacheTexture2D(void* TexturePtr,int Width,int Height,Unity::Texture2DPixelFormat::Type PixelFormat)
 {
-	try
+	auto Function = [&]()
 	{
 		SoyPixelsMeta Meta( Width, Height, Unity::GetPixelFormat( PixelFormat ) );
-		return AllocCacheRenderTexture( TexturePtr, Meta, ReadAsFloat );
-	}
-	catch(const std::exception& e)
-	{
-		std::stringstream Error;
-		Error << "Exception in " << __func__ << "; " << e.what();
-		PopUnity::DebugLog( Error.str() );
-		return -1;
-	}
-	catch(...)
-	{
-		std::stringstream Error;
-		Error << "Unknown exception in " << __func__ << "";
-		PopUnity::DebugLog( Error.str() );
-		return -1;
-	}
+		return AllocCacheRenderTexture( TexturePtr, Meta );
+	};
+	return SafeCall( Function, __func__, -1 );
 }
-
+/*
 
 
 __export void ReleaseCache(int Cache)
