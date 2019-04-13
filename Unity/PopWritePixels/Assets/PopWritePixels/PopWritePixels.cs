@@ -30,6 +30,9 @@ public static class PopWritePixels
 	private static extern bool QueueWritePixels(int Cache, byte[] ByteData, int ByteDataSize);
 
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
+	private static extern bool QueueWritePixels(int Cache, System.IntPtr ByteData, int ByteDataSize);
+
+	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
 	private static extern bool HasCacheWrittenBytes(int Cache);
 
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
@@ -79,6 +82,35 @@ public static class PopWritePixels
 		~JobCache()
 		{
 			Release();
+		}
+
+		
+		public void QueueWrite(System.IntPtr Bytes, int Bytes_Length, bool Copy = false, Camera AfterCamera = null)
+		{
+			//	todo: make copy of bytes here, but it'll be slow
+			//			we can pin/get GC handle for byte[] but intptr won't work that way
+			if (Copy)
+				throw new System.Exception("Currently not copying, assuming caller won't delete bytes over the next frame");
+
+			if (!QueueWritePixels(CacheIndex.Value, Bytes, Bytes_Length))
+				throw new System.Exception("SetCacheBytes returned error");
+
+			//	queue a write
+			if (AfterCamera != null)
+			{
+				if (IssueEventCallback == null)
+				{
+					IssueEventCallback = (c) => {
+						if (c == AfterCamera)
+							GL.IssuePluginEvent(PluginFunction, CacheIndex.Value);
+					};
+					Camera.onPostRender += IssueEventCallback;
+				}
+			}
+			else
+			{
+				GL.IssuePluginEvent(PluginFunction, CacheIndex.Value);
+			}
 		}
 
 		public void QueueWrite(byte[] Bytes,bool Copy=false,Camera AfterCamera=null)
@@ -161,10 +193,17 @@ public static class PopWritePixels
 	}
 
 
-	public static JobCache WritePixelsAsync(int Width,int Height,TextureFormat Format, byte[] Pixels, Camera AfterCamera = null)
+	public static JobCache WritePixelsAsync(int Width, int Height, TextureFormat Format, byte[] Pixels, Camera AfterCamera = null)
 	{
 		var Job = new JobCache(Width, Height, Format);
 		Job.QueueWrite(Pixels, AfterCamera);
+		return Job;
+	}
+
+	public static JobCache WritePixelsAsync(int Width, int Height, TextureFormat Format,System.IntPtr PixelBytes, int PixelBytesLength, Camera AfterCamera = null)
+	{
+		var Job = new JobCache(Width, Height, Format);
+		Job.QueueWrite(PixelBytes, PixelBytesLength,AfterCamera);
 		return Job;
 	}
 
