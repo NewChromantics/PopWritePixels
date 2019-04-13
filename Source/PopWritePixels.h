@@ -16,8 +16,10 @@ __export void		ReleaseCache(int Cache);
 //	set which pixels to write on next update
 __export bool		QueueWritePixels(int Cache,uint8_t* ByteData, int ByteDataSize);
 
-//	has the job been done?
-__export bool		HasCacheWrittenBytes(int Cache);
+__export void		SetWriteRowsPerFrame(int Cache,int WriteRowsPerFrame);
+
+//	how many rows written. negative numbers on error
+__export int		GetRowsWritten(int Cache);
 
 //	if we allocated a texture, this is it (also returns the original texture if we provided one)
 __export void*		GetCacheTexture(int Cache);

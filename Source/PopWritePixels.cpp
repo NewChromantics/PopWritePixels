@@ -32,9 +32,11 @@ public:
 	bool			Used() const;
 	void			Release();
 	bool			HasFinished() const;
+	size_t			GetRowsWritten() const;
 	void			WritePixels();
 
 public:
+	size_t			mWriteRowsPerFrame = 256;
 	bool			mCreatingNewTexture = false;
 	std::shared_ptr<Directx::TTexture>	mAllocatedTexture;
 	void*			mTexturePtr = nullptr;
@@ -379,16 +381,30 @@ __export bool QueueWritePixels(int CacheIndex,uint8_t* ByteData, int ByteDataSiz
 	return SafeCall( Function, __func__, false );
 }
 
-__export bool HasCacheWrittenBytes(int CacheIndex)
+__export int GetRowsWritten(int CacheIndex)
 {
 	auto Function = [&]()
 	{
 		std::Debug << "WritePixels(" << CacheIndex << ")" << std::endl;
 		auto& Cache = PopWritePixels::GetCache(CacheIndex);
 
-		return Cache.HasFinished();
+		return Cache.GetRowsWritten();
 	};
-	return SafeCall( Function, __func__, false );
+	return SafeCall( Function, __func__, -1 );
+}
+
+__export void SetWriteRowsPerFrame(int CacheIndex,int WriteRowsPerFrame)
+{
+	auto Function = [&]()
+	{
+		auto& Cache = PopWritePixels::GetCache(CacheIndex);
+		
+		if ( WriteRowsPerFrame < 1 )
+			WriteRowsPerFrame = 1;
+		Cache.mWriteRowsPerFrame = WriteRowsPerFrame;
+		return 0;
+	};
+	SafeCall( Function, __func__, -1 );
 }
 
 
@@ -438,14 +454,20 @@ void TCache::Release()
 		throw Soy::AssertException("Post Release cache is still marked as used");
 }
 
-bool TCache::HasFinished() const
+size_t TCache::GetRowsWritten() const
 {
 	//	waiting for data
 	if ( !mPendingBytes )
-		return false;
+		return 0;
 
 	auto& Pending = *mPendingBytes;
-	if ( Pending.mRowsWritten < mTextureMeta.GetHeight() )
+	return Pending.mRowsWritten;
+}
+
+bool TCache::HasFinished() const
+{
+	auto RowsWritten = GetRowsWritten();
+	if ( RowsWritten < mTextureMeta.GetHeight() )
 		return false;
 
 	return true;
@@ -475,8 +497,7 @@ void TCache::WritePixels()
 		}
 
 		auto RowFirst = mPendingBytes->mRowsWritten;
-		static auto RowCountDefault = 10;
-		auto RowLast = std::min<size_t>(RowFirst + RowCountDefault, mTextureMeta.GetHeight() );
+		auto RowLast = std::min<size_t>(RowFirst + mWriteRowsPerFrame, mTextureMeta.GetHeight() );
 		auto RowCount = RowLast - RowFirst;
 
 		if ( mAllocatedTexture )

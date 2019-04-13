@@ -33,7 +33,7 @@ public static class PopWritePixels
 	private static extern bool QueueWritePixels(int Cache, System.IntPtr ByteData, int ByteDataSize);
 
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
-	private static extern bool HasCacheWrittenBytes(int Cache);
+	private static extern int GetRowsWritten(int Cache);
 
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
 	private static extern IntPtr GetCacheTexture(int Cache);
@@ -41,6 +41,9 @@ public static class PopWritePixels
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
 	private static extern IntPtr GetWritePixelsToCacheFunc();
 
+	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
+	private static extern void SetWriteRowsPerFrame(int Cache,int RowsPerFrame);
+	
 
 
 
@@ -51,6 +54,7 @@ public static class PopWritePixels
 		IntPtr		PluginFunction;
 		Camera.CameraCallback IssueEventCallback = null;
 
+		int RowCount = -1;
 		int? NewWidth = null;
 		int? NewHeight = null;
 		TextureFormat? NewFormat = null;
@@ -63,6 +67,7 @@ public static class PopWritePixels
 			if (CacheIndex == -1)
 				throw new System.Exception("Failed to allocate cache index");
 
+			RowCount = texture.height;
 			PluginFunction = GetWritePixelsToCacheFunc();
 		}
 
@@ -73,6 +78,7 @@ public static class PopWritePixels
 			if (CacheIndex == -1)
 				throw new System.Exception("Failed to allocate cache index");
 
+			RowCount = Height;
 			NewWidth = Width;
 			NewHeight = Height;
 			NewFormat = TextureFormat;
@@ -84,8 +90,13 @@ public static class PopWritePixels
 			Release();
 		}
 
+		public void SetWriteRowsPerFrame(int RowsPerFrame)
+		{
+			PopWritePixels.SetWriteRowsPerFrame(CacheIndex.Value, RowsPerFrame);
+		}
+
 		//	queue a write update
-		private void QueueUpdate(Camera AfterCamera=null)
+		public void QueueUpdate(Camera AfterCamera=null)
 		{
 			//	queue a write
 			if (AfterCamera != null)
@@ -142,16 +153,30 @@ public static class PopWritePixels
 			}
 		}
 		
+		public float GetProgress()
+		{
+			var RowsWritten = GetRowsWritten(CacheIndex.Value);
+
+			if (RowsWritten < 0)
+				throw new System.Exception("Error with GetRowsWritten(): " + RowsWritten);
+
+			return RowsWritten / (float)RowCount;
+		}
+
 		public bool	HasFinished()
 		{
-			var Finished = HasCacheWrittenBytes(CacheIndex.Value);
+			var RowsWritten = GetRowsWritten(CacheIndex.Value);
+
+			if (RowsWritten < 0)
+				throw new System.Exception("Error with GetRowsWritten(): " + RowsWritten);
+
+			if (RowsWritten >= RowCount)
+				return true;
 
 			//	do another write in case it's multi-staged
 			//	todo: some error/progress codes or something to say error vs more-todo
-			if (!Finished)
-				QueueUpdate();
-
-			return Finished;
+			QueueUpdate();
+			return false;
 		}
 
 		public Texture GetTexture(bool MipMap,bool LinearFilter)

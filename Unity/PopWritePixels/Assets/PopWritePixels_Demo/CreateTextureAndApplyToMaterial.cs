@@ -6,6 +6,7 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 
 	public int TextureWidth = 1024;
 	public int TextureHeight = 1024;
+	public int WriteRowsPerFrame = 50;
 	public FilterMode TextureFilterMode = FilterMode.Point;
 	public TextureFormat TextureFormat = TextureFormat.RGBA32;
 	public bool MipMap = false;
@@ -101,6 +102,7 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 		{
 			WritePixelsJob = PopWritePixels.WritePixelsAsync(NewTexture, PixelBytes);
 		}
+		WritePixelsJob.SetWriteRowsPerFrame(WriteRowsPerFrame); 
 		yield return null;
 	}
 
