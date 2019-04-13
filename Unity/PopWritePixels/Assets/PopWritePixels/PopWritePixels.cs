@@ -84,17 +84,9 @@ public static class PopWritePixels
 			Release();
 		}
 
-		
-		public void QueueWrite(System.IntPtr Bytes, int Bytes_Length, bool Copy = false, Camera AfterCamera = null)
+		//	queue a write update
+		private void QueueUpdate(Camera AfterCamera=null)
 		{
-			//	todo: make copy of bytes here, but it'll be slow
-			//			we can pin/get GC handle for byte[] but intptr won't work that way
-			if (Copy)
-				throw new System.Exception("Currently not copying, assuming caller won't delete bytes over the next frame");
-
-			if (!QueueWritePixels(CacheIndex.Value, Bytes, Bytes_Length))
-				throw new System.Exception("SetCacheBytes returned error");
-
 			//	queue a write
 			if (AfterCamera != null)
 			{
@@ -111,6 +103,19 @@ public static class PopWritePixels
 			{
 				GL.IssuePluginEvent(PluginFunction, CacheIndex.Value);
 			}
+		}
+		
+		public void QueueWrite(System.IntPtr Bytes, int Bytes_Length, bool Copy = false, Camera AfterCamera = null)
+		{
+			//	todo: make copy of bytes here, but it'll be slow
+			//			we can pin/get GC handle for byte[] but intptr won't work that way
+			if (Copy)
+				throw new System.Exception("Currently not copying, assuming caller won't delete bytes over the next frame");
+
+			if (!QueueWritePixels(CacheIndex.Value, Bytes, Bytes_Length))
+				throw new System.Exception("SetCacheBytes returned error");
+
+			QueueUpdate(AfterCamera);			
 		}
 
 		public void QueueWrite(byte[] Bytes,bool Copy=false,Camera AfterCamera=null)
@@ -139,8 +144,14 @@ public static class PopWritePixels
 		
 		public bool	HasFinished()
 		{
-			var Written = HasCacheWrittenBytes(CacheIndex.Value);
-			return Written;
+			var Finished = HasCacheWrittenBytes(CacheIndex.Value);
+
+			//	do another write in case it's multi-staged
+			//	todo: some error/progress codes or something to say error vs more-todo
+			if (!Finished)
+				QueueUpdate();
+
+			return Finished;
 		}
 
 		public Texture GetTexture(bool MipMap,bool LinearFilter)
