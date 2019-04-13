@@ -467,7 +467,12 @@ void TCache::WritePixels()
 
 			//	need a texture resource view for unity
 			auto& Device = DirectxContext->LockGetDevice();
-			mAllocatedTexture->GetResourceView(Device);
+			auto& Resource = mAllocatedTexture->GetResourceView(Device);
+
+			auto& Context = DirectxContext->LockGetContext();
+			Context.GenerateMips(&Resource);
+
+			DirectxContext->Unlock();
 			DirectxContext->Unlock();
 		}
 		else
@@ -476,7 +481,7 @@ void TCache::WritePixels()
 			Texture.Write(Pixels, *DirectxContext);
 		}
 
-
+	
 		mPendingBytes->mWritten = true;
 		return ;
 	}
