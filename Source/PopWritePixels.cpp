@@ -23,7 +23,7 @@ class TPendingBytes
 public:
 	uint8_t*	mBytes = 0;
 	size_t		mBytesSize = 0;
-	bool		mWritten = false;
+	size_t		mRowsWritten = 0;
 };
 
 class TCache
@@ -31,7 +31,7 @@ class TCache
 public:
 	bool			Used() const;
 	void			Release();
-	bool			HasWritten() const;
+	bool			HasFinished() const;
 	void			WritePixels();
 
 public:
@@ -386,7 +386,7 @@ __export bool HasCacheWrittenBytes(int CacheIndex)
 		std::Debug << "WritePixels(" << CacheIndex << ")" << std::endl;
 		auto& Cache = PopWritePixels::GetCache(CacheIndex);
 
-		return Cache.HasWritten();
+		return Cache.HasFinished();
 	};
 	return SafeCall( Function, __func__, false );
 }
@@ -438,9 +438,17 @@ void TCache::Release()
 		throw Soy::AssertException("Post Release cache is still marked as used");
 }
 
-bool TCache::HasWritten() const
+bool TCache::HasFinished() const
 {
-	return mPendingBytes ? mPendingBytes->mWritten : false; 
+	//	waiting for data
+	if ( !mPendingBytes )
+		return false;
+
+	auto& Pending = *mPendingBytes;
+	if ( Pending.mRowsWritten < mTextureMeta.GetHeight() )
+		return false;
+
+	return true;
 }
 
 void TCache::WritePixels()
@@ -448,7 +456,9 @@ void TCache::WritePixels()
 	if ( !mPendingBytes )
 		throw Soy::AssertException("No queued texture bytes");
 
-	SoyPixelsRemote Pixels(mPendingBytes->mBytes, mPendingBytes->mBytesSize, mTextureMeta);
+	auto& Pending = *mPendingBytes;
+	SoyPixelsRemote Pixels(Pending.mBytes, Pending.mBytesSize, mTextureMeta);
+
 
 #if defined(ENABLE_DIRECTX)
 	auto DirectxContext = Unity::GetDirectxContextPtr();
@@ -458,13 +468,21 @@ void TCache::WritePixels()
 		//	create  a new texture if there isn't one
 		if ( !mTexturePtr && !mAllocatedTexture )
 		{
-			mAllocatedTexture.reset(new Directx::TTexture(mTextureMeta, *DirectxContext, Directx::TTextureMode::WriteOnly));
+			//auto TextureMode = Directx::TTextureMode::WriteOnly;
+			static auto TextureMode = Directx::TTextureMode::RenderTarget;
+			//auto TextureMode = Directx::TTextureMode::GpuOnly;
+			mAllocatedTexture.reset(new Directx::TTexture(mTextureMeta, *DirectxContext, TextureMode ));
 		}
+
+		auto RowFirst = mPendingBytes->mRowsWritten;
+		static auto RowCountDefault = 10;
+		auto RowLast = std::min<size_t>(RowFirst + RowCountDefault, mTextureMeta.GetHeight() );
+		auto RowCount = RowLast - RowFirst;
 
 		if ( mAllocatedTexture )
 		{
-			mAllocatedTexture->Write(Pixels, *DirectxContext);
-
+			mAllocatedTexture->Write(Pixels, *DirectxContext, RowFirst, RowCount );
+			
 			//	need a texture resource view for unity
 			auto& Device = DirectxContext->LockGetDevice();
 			auto& Resource = mAllocatedTexture->GetResourceView(Device);
@@ -478,11 +496,10 @@ void TCache::WritePixels()
 		else
 		{
 			Directx::TTexture Texture(static_cast<ID3D11Texture2D*>(mTexturePtr));
-			Texture.Write(Pixels, *DirectxContext);
+			Texture.Write(Pixels, *DirectxContext, RowFirst, RowCount);
 		}
-
-	
-		mPendingBytes->mWritten = true;
+				
+		Pending.mRowsWritten = RowLast;
 		return ;
 	}
 #endif
