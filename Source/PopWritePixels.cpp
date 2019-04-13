@@ -8,7 +8,7 @@
 #include <SoyOpengl.h>
 #include <SoyOpenglContext.h>
 #endif
-/*
+
 #if defined(ENABLE_DIRECTX)
 #include <SoyDirectx.h>
 #endif
@@ -16,7 +16,7 @@
 #if defined(ENABLE_DIRECTX9)
 #include <SoyDirectx9.h>
 #endif
-*/
+
 
 class TPendingBytes
 {
@@ -32,6 +32,7 @@ public:
 	bool			Used() const		{	return mTexturePtr != nullptr;	}
 	void			Release()			{	mTexturePtr = nullptr;	}
 	bool			HasWritten() const	{	return mPendingBytes ? mPendingBytes->mWritten : false; }
+	void			WritePixels();
 
 public:
 	void*			mTexturePtr = nullptr;
@@ -281,15 +282,7 @@ __api(void) WritePixelsToCache(int CacheIndex)
 		auto& Cache = PopWritePixels::GetCache(CacheIndex);
 		
 		//	write any pending pixels
-		if ( !Cache.mPendingBytes )
-			throw Soy::AssertException("Cache has no pending pixels");
-
-		//	do write
-		/*
-		std::lock_guard<std::mutex> Lock( Cache.mLastReadPixelsLock );
-		ReadPixelFromTexture( Cache.mTexturePtr, Cache.mLastReadPixels, Cache.mTextureMeta );
-		Cache.OnRead();
-		*/
+		Cache.WritePixels();
 		return 0;
 	};
 	SafeCall( Function, __func__, 0 );
@@ -381,6 +374,17 @@ __export bool HasCacheWrittenBytes(int CacheIndex)
 	return SafeCall( Function, __func__, false );
 }
 
+__export void* GetCacheTexture(int CacheIndex)
+{
+	auto Function = [&]()
+	{
+		std::Debug << "GetCacheTexture(" << CacheIndex << ")" << std::endl;
+		auto& Cache = PopWritePixels::GetCache(CacheIndex);
+		return Cache.mTexturePtr;
+	};
+	return SafeCall<void*>( Function, __func__, nullptr );
+}
+
 /*
 __export int ReadPixelBytesFromCache(int CacheIndex,uint8_t* ByteData,int ByteDataSize)
 {
@@ -410,3 +414,25 @@ __export int ReadPixelBytesFromCache(int CacheIndex,uint8_t* ByteData,int ByteDa
 	}
 }
 */
+
+void TCache::WritePixels()
+{
+	if ( !mPendingBytes )
+		throw Soy::AssertException("No queued texture bytes");
+
+	SoyPixelsRemote Pixels(mPendingBytes->mBytes, mPendingBytes->mBytesSize, mTextureMeta);
+
+#if defined(ENABLE_DIRECTX)
+	auto DirectxContext = Unity::GetDirectxContextPtr();
+
+	if ( DirectxContext )
+	{
+		Directx::TTexture Texture( static_cast<ID3D11Texture2D*>(mTexturePtr) );
+		Texture.Write( Pixels, *DirectxContext );
+		return ;
+	}
+#endif
+
+	throw Soy::AssertException("No device context");
+}
+

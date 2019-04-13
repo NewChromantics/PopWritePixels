@@ -3,27 +3,26 @@
 #include "PopUnity.h"
 #include <functional>
 
-/*
-__export int					WritePixelsToTexture2D(void* TexturePtr,uint8_t* PixelData,int PixelDataSize,int Width,int Height,int Channels,Unity::RenderTexturePixelFormat::Type PixelFormat);
 
+//	alloc a cache/job to write to an existing texture
+__export int		AllocCacheTexture2D(void* TexturePtr, int Width, int Height,Unity::Texture2DPixelFormat::Type PixelFormat);
 
+//	alloc a new texture	
+//__export int		AllocCacheTexture(int Width, int Height,Unity::Texture2DPixelFormat::Type PixelFormat);
 
-__export int					ReadPixelFromRenderTexture(void* TexturePtr,uint8_t* PixelData,int PixelDataSize,int* WidthHeightChannels,Unity::RenderTexturePixelFormat::Type PixelFormat);
-__export int					ReadPixelFromTexture2D(void* TexturePtr,uint8_t* PixelData,int PixelDataSize,int* WidthHeightChannels,Unity::Texture2DPixelFormat::Type PixelFormat);
+//	cleanup
+__export void		ReleaseCache(int Cache);
 
-__export UnityRenderingEvent	GetReadPixelsFromCacheFunc();
-__export int					AllocCacheRenderTexture(void* TexturePtr,int Width,int Height,Unity::boolean ReadAsFloat,Unity::RenderTexturePixelFormat::Type PixelFormat);
-__export int					AllocCacheTexture2D(void* TexturePtr,int Width,int Height,Unity::boolean ReadAsFloat,Unity::Texture2DPixelFormat::Type PixelFormat);
-__export void					ReleaseCache(int Cache);
-__api(void)						ReadPixelsFromCache(int Cache);
+//	set which pixels to write on next update
+__export bool		QueueWritePixels(int Cache,uint8_t* ByteData, int ByteDataSize);
 
-__export int					ReadPixelBytesFromCache(int Cache,uint8_t* ByteData,int ByteDataSize);
-__export int					ReadPixelFloatsFromCache(int Cache,float* FloatData,int FloatDataSize);
-*/
-__export int AllocCacheTexture2D(void* TexturePtr, int Width, int Height,Unity::Texture2DPixelFormat::Type PixelFormat);
-__export void ReleaseCache(int Cache);
+//	has the job been done?
+__export bool		HasCacheWrittenBytes(int Cache);
+
+//	if we allocated a texture, this is it (also returns the original texture if we provided one)
+__export void*		GetCacheTexture(int Cache);
+
+//	get the "run a job on render thread"
 __export UnityRenderingEvent GetWritePixelsToCacheFunc();
-__export bool QueueWritePixels(int Cache,uint8_t* ByteData, int ByteDataSize);
-__export bool HasCacheWrittenBytes(int Cache);
 
 
