@@ -291,14 +291,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   TextureWidth: 16384
   TextureHeight: 16384
-  TextureFilterMode: 0
+  TextureFilterMode: 1
   TextureFormat: 4
-  MipMap: 0
+  MipMap: 1
   WriteColours:
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 0, g: 0, b: 0, a: 0}
   - {r: 1, g: 0, b: 0, a: 1}
   - {r: 0, g: 1, b: 0, a: 1}
   - {r: 0, g: 0, b: 1, a: 1}
   NewTexture: {fileID: 0}
+  CreateTextureInPlugin: 1
 --- !u!23 &1484185952
 MeshRenderer:
   m_ObjectHideFlags: 0

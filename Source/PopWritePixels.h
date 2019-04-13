@@ -8,7 +8,7 @@
 __export int		AllocCacheTexture2D(void* TexturePtr, int Width, int Height,Unity::Texture2DPixelFormat::Type PixelFormat);
 
 //	alloc a new texture	
-//__export int		AllocCacheTexture(int Width, int Height,Unity::Texture2DPixelFormat::Type PixelFormat);
+__export int		AllocCacheTexture(int Width, int Height,Unity::Texture2DPixelFormat::Type PixelFormat);
 
 //	cleanup
 __export void		ReleaseCache(int Cache);

@@ -10,7 +10,8 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 	public TextureFormat TextureFormat = TextureFormat.RGBA32;
 	public bool MipMap = false;
 	public List<Color> WriteColours = new List<Color>(new Color[]{Color.red, Color.green, Color.blue});
-	public Texture2D NewTexture;
+	public Texture NewTexture;
+	public bool CreateTextureInPlugin = true;
 	PopWritePixels.JobCache WritePixelsJob;
 	byte[] PixelBytes;
 
@@ -28,9 +29,9 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 			{
 				var PixelIndex = (x + (y * TextureWidth)) * 4;
 				PixelBytes[PixelIndex + 0] = Colour32.r;
-				PixelBytes[PixelIndex + 0] = Colour32.g;
-				PixelBytes[PixelIndex + 0] = Colour32.b;
-				PixelBytes[PixelIndex + 0] = Colour32.a;
+				PixelBytes[PixelIndex + 1] = Colour32.g;
+				PixelBytes[PixelIndex + 2] = Colour32.b;
+				PixelBytes[PixelIndex + 3] = Colour32.a;
 				if (PixelColours!=null)
 					PixelColours[x + (y * TextureWidth)] = Colour32;
 			}
@@ -39,17 +40,27 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 		return PixelBytes;
 	}
 
+	void OnNewTextureCreated(Texture Texture)
+	{
+		var Mat = this.GetComponent<MeshRenderer>().material;
+		Mat.mainTexture = Texture;
+	}
+
 	IEnumerator Run()
 	{
 		yield return new WaitForSeconds(1);
 
 		//	make new texture
 		UnityEngine.Profiling.Profiler.BeginSample("Create Texture");
-		NewTexture = new Texture2D(TextureWidth, TextureHeight, TextureFormat, MipMap);
+		if (!CreateTextureInPlugin)
+		{
+			NewTexture = new Texture2D(TextureWidth, TextureHeight, TextureFormat, MipMap);
+			NewTexture.filterMode = TextureFilterMode;
+		}
 		UnityEngine.Profiling.Profiler.EndSample();
-		NewTexture.filterMode = TextureFilterMode;
-		var Mat = this.GetComponent<MeshRenderer>().material;
-		Mat.mainTexture = NewTexture;
+		if (NewTexture != null)
+			OnNewTextureCreated(NewTexture);
+			
 		yield return null;
 		
 		//	generate pixels
@@ -59,26 +70,37 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 		PixelBytes = GeneratePixelBytes(TextureWidth, TextureHeight, 4, null);
 		yield return null;
 
-		//	show preview
-		if (NewTexture.mipmapCount == 0)
+		if (NewTexture != null)
 		{
-			UnityEngine.Profiling.Profiler.BeginSample("LoadRawTextureData()");
-			NewTexture.LoadRawTextureData(PixelBytes);
-			NewTexture.Apply();
-			UnityEngine.Profiling.Profiler.EndSample();
+			var NewTexture2D = NewTexture as Texture2D;
+			//	show preview
+			if (NewTexture2D.mipmapCount == 0)
+			{
+				UnityEngine.Profiling.Profiler.BeginSample("LoadRawTextureData()");
+				NewTexture2D.LoadRawTextureData(PixelBytes);
+				NewTexture2D.Apply();
+				UnityEngine.Profiling.Profiler.EndSample();
+			}
+			else
+			{
+				var PixelColours = new Color32[TextureWidth * TextureHeight];
+				var PixelBytes = GeneratePixelBytes(TextureWidth, TextureHeight, 4, PixelColours);
+				UnityEngine.Profiling.Profiler.BeginSample("SetPixels32()");
+				NewTexture2D.SetPixels32(PixelColours);
+				NewTexture2D.Apply();
+				UnityEngine.Profiling.Profiler.EndSample();
+			}
+			yield return null;
+		}
+
+		if (CreateTextureInPlugin)
+		{
+			WritePixelsJob = PopWritePixels.WritePixelsAsync(TextureWidth, TextureHeight, TextureFormat, PixelBytes);
 		}
 		else
 		{
-			var PixelColours = new Color32[TextureWidth * TextureHeight];
-			var PixelBytes = GeneratePixelBytes(TextureWidth, TextureHeight, 4, PixelColours);
-			UnityEngine.Profiling.Profiler.BeginSample("SetPixels32()");
-			NewTexture.SetPixels32(PixelColours);
-			NewTexture.Apply();
-			UnityEngine.Profiling.Profiler.EndSample();
+			WritePixelsJob = PopWritePixels.WritePixelsAsync(NewTexture, PixelBytes);
 		}
-		yield return null;
-
-		WritePixelsJob = PopWritePixels.WritePixelsAsync(NewTexture, PixelBytes);
 		yield return null;
 	}
 
@@ -100,8 +122,12 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 		{
 			Debug.Log("Finished writing pixels");
 			this.enabled = false;
+			NewTexture = WritePixelsJob.GetTexture(MipMap, TextureFilterMode!=FilterMode.Point);
+			OnNewTextureCreated(NewTexture);
 			//NewTexture.UpdateExternalTexture();
-			WritePixelsJob.Release();
+
+			//	gr: only delete this when you've deleted the texture first!
+			//WritePixelsJob.Release();
 		}
 	}
 }

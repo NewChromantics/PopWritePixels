@@ -29,12 +29,14 @@ public:
 class TCache
 {
 public:
-	bool			Used() const		{	return mTexturePtr != nullptr;	}
-	void			Release()			{	mTexturePtr = nullptr;	}
-	bool			HasWritten() const	{	return mPendingBytes ? mPendingBytes->mWritten : false; }
+	bool			Used() const;
+	void			Release();
+	bool			HasWritten() const;
 	void			WritePixels();
 
 public:
+	bool			mCreatingNewTexture = false;
+	std::shared_ptr<Directx::TTexture>	mAllocatedTexture;
 	void*			mTexturePtr = nullptr;
 	SoyPixelsMeta	mTextureMeta;
 	std::shared_ptr<TPendingBytes>	mPendingBytes;
@@ -58,6 +60,7 @@ namespace PopWritePixels
 template<typename RETURN,typename FUNC>
 RETURN SafeCall(FUNC Function,const char* FunctionName,RETURN ErrorReturn)
 {
+	Soy::TScopeTimerPrint Timer(FunctionName, 1);
 	try
 	{
 		return Function();
@@ -178,6 +181,8 @@ __export int ReadPixelFromRenderTexture(void* TexturePtr,uint8_t* PixelData,int 
 
 
 */
+
+
 TCache& PopWritePixels::AllocCache(int& CacheIndex)
 {
 	for ( int i=0;	i<MAX_CACHES;	i++ )
@@ -226,6 +231,8 @@ int AllocCacheRenderTexture(void* TexturePtr,SoyPixelsMeta Meta)
 	auto& Cache = PopWritePixels::AllocCache(CacheIndex);
 	Cache.mTexturePtr = TexturePtr;
 	Cache.mTextureMeta = Meta;
+	if ( !TexturePtr )
+		Cache.mCreatingNewTexture = true;
 	return CacheIndex;
 }
 /*
@@ -258,6 +265,16 @@ __export int AllocCacheTexture2D(void* TexturePtr,int Width,int Height,Unity::Te
 	{
 		SoyPixelsMeta Meta( Width, Height, Unity::GetPixelFormat( PixelFormat ) );
 		return AllocCacheRenderTexture( TexturePtr, Meta );
+	};
+	return SafeCall( Function, __func__, -1 );
+}
+
+__export int AllocCacheTexture(int Width,int Height,Unity::Texture2DPixelFormat::Type PixelFormat)
+{
+	auto Function = [&]()
+	{
+		SoyPixelsMeta Meta( Width, Height, Unity::GetPixelFormat( PixelFormat ) );
+		return AllocCacheRenderTexture( nullptr, Meta );
 	};
 	return SafeCall( Function, __func__, -1 );
 }
@@ -374,46 +391,57 @@ __export bool HasCacheWrittenBytes(int CacheIndex)
 	return SafeCall( Function, __func__, false );
 }
 
+
 __export void* GetCacheTexture(int CacheIndex)
 {
 	auto Function = [&]()
 	{
 		std::Debug << "GetCacheTexture(" << CacheIndex << ")" << std::endl;
 		auto& Cache = PopWritePixels::GetCache(CacheIndex);
-		return Cache.mTexturePtr;
+		if ( Cache.mTexturePtr )
+			return Cache.mTexturePtr;
+
+		if ( Cache.mAllocatedTexture )
+		{
+			//	unity needs a shader resource view
+			auto& ResourceView = Cache.mAllocatedTexture->GetResourceView();
+			return static_cast<void*>(&ResourceView);
+			//return static_cast<void*>(Cache.mAllocatedTexture.get());
+		}
+
+		return static_cast<void*>(nullptr);
 	};
 	return SafeCall<void*>( Function, __func__, nullptr );
 }
 
-/*
-__export int ReadPixelBytesFromCache(int CacheIndex,uint8_t* ByteData,int ByteDataSize)
+
+bool TCache::Used() const		
 {
-	try
-	{
-		auto& Cache = PopReadPixels::GetCache( CacheIndex );
-		std::lock_guard<std::mutex> Lock( Cache.mLastReadPixelsLock );
-		if ( !Cache.mLastReadPixels.IsValid() )
-			return -1;
-		auto ByteDataArray = GetRemoteArray( ByteData, static_cast<size_t>(ByteDataSize) );
-		ByteDataArray.Copy( Cache.mLastReadPixels.GetPixelsArray() );
-		return Cache.mRevision;
-	}
-	catch(const std::exception& e)
-	{
-		std::stringstream Error;
-		Error << "Exception in " << __func__ << " " << e.what();
-		PopUnity::DebugLog( Error.str() );
-		return -1;
-	}
-	catch(...)
-	{
-		std::stringstream Error;
-		Error << "Unknown exception in " << __func__;
-		PopUnity::DebugLog( Error.str() );
-		return -1;
-	}
+	if ( mTexturePtr )
+		return true;
+	if ( mAllocatedTexture )
+		return true;
+	if ( mCreatingNewTexture )
+		return true;
+
+	return false;
 }
-*/
+
+void TCache::Release() 
+{
+	mTexturePtr = nullptr;	
+	mCreatingNewTexture = false; 
+	mAllocatedTexture.reset();
+
+	//	verify logic
+	if ( Used() )
+		throw Soy::AssertException("Post Release cache is still marked as used");
+}
+
+bool TCache::HasWritten() const
+{
+	return mPendingBytes ? mPendingBytes->mWritten : false; 
+}
 
 void TCache::WritePixels()
 {
@@ -427,8 +455,29 @@ void TCache::WritePixels()
 
 	if ( DirectxContext )
 	{
-		Directx::TTexture Texture( static_cast<ID3D11Texture2D*>(mTexturePtr) );
-		Texture.Write( Pixels, *DirectxContext );
+		//	create  a new texture if there isn't one
+		if ( !mTexturePtr && !mAllocatedTexture )
+		{
+			mAllocatedTexture.reset(new Directx::TTexture(mTextureMeta, *DirectxContext, Directx::TTextureMode::WriteOnly));
+		}
+
+		if ( mAllocatedTexture )
+		{
+			mAllocatedTexture->Write(Pixels, *DirectxContext);
+
+			//	need a texture resource view for unity
+			auto& Device = DirectxContext->LockGetDevice();
+			mAllocatedTexture->GetResourceView(Device);
+			DirectxContext->Unlock();
+		}
+		else
+		{
+			Directx::TTexture Texture(static_cast<ID3D11Texture2D*>(mTexturePtr));
+			Texture.Write(Pixels, *DirectxContext);
+		}
+
+
+		mPendingBytes->mWritten = true;
 		return ;
 	}
 #endif
