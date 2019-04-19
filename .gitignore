@@ -33,3 +33,5 @@ PopReadPixels\.Android/project\.properties
 PopReadPixels\.Android/libs/
 
 PopReadPixels\.Android/obj/
+
+PopWritePixels\.Windows/x64/
