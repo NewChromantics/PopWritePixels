@@ -37,6 +37,7 @@ public:
 
 public:
 	size_t			mWriteRowsPerFrame = 256;
+	bool			mEnableMips = true;		//	for new texture
 	bool			mCreatingNewTexture = false;
 	std::shared_ptr<Directx::TTexture>	mAllocatedTexture;
 	void*			mTexturePtr = nullptr;
@@ -227,7 +228,7 @@ void PopWritePixels::ReleaseCache(uint32_t CacheIndex)
 	gCaches[CacheIndex].Release();
 }
 
-int AllocCacheRenderTexture(void* TexturePtr,SoyPixelsMeta Meta)
+int AllocCacheRenderTexture(void* TexturePtr,SoyPixelsMeta Meta,bool EnableMips)
 {
 	int CacheIndex = -1;
 	auto& Cache = PopWritePixels::AllocCache(CacheIndex);
@@ -235,48 +236,28 @@ int AllocCacheRenderTexture(void* TexturePtr,SoyPixelsMeta Meta)
 	Cache.mTextureMeta = Meta;
 	if ( !TexturePtr )
 		Cache.mCreatingNewTexture = true;
+	Cache.mEnableMips = EnableMips;
+
 	return CacheIndex;
 }
-/*
-__export int AllocCacheRenderTexture(void* TexturePtr,int Width,int Height,Unity::boolean ReadAsFloat,Unity::RenderTexturePixelFormat::Type PixelFormat)
-{
-	try
-	{
-		SoyPixelsMeta Meta( Width, Height, Unity::GetPixelFormat( PixelFormat ) );
-		return AllocCacheRenderTexture( TexturePtr, Meta, ReadAsFloat );
-	}
-	catch(const std::exception& e)
-	{
-		std::stringstream Error;
-		Error << "Exception in " << __func__ << "; " << e.what();
-		PopUnity::DebugLog( Error.str() );
-		return -1;
-	}
-	catch(...)
-	{
-		std::stringstream Error;
-		Error << "Unknown exception in " << __func__ << "";
-		PopUnity::DebugLog( Error.str() );
-		return -1;
-	}
-}
-*/
+
+
 __export int AllocCacheTexture2D(void* TexturePtr,int Width,int Height,Unity::Texture2DPixelFormat::Type PixelFormat)
 {
 	auto Function = [&]()
 	{
 		SoyPixelsMeta Meta( Width, Height, Unity::GetPixelFormat( PixelFormat ) );
-		return AllocCacheRenderTexture( TexturePtr, Meta );
+		return AllocCacheRenderTexture( TexturePtr, Meta, false );
 	};
 	return SafeCall( Function, __func__, -1 );
 }
 
-__export int AllocCacheTexture(int Width,int Height,Unity::Texture2DPixelFormat::Type PixelFormat)
+__export int AllocCacheTexture(int Width,int Height,Unity::Texture2DPixelFormat::Type PixelFormat,bool EnableMips)
 {
 	auto Function = [&]()
 	{
 		SoyPixelsMeta Meta( Width, Height, Unity::GetPixelFormat( PixelFormat ) );
-		return AllocCacheRenderTexture( nullptr, Meta );
+		return AllocCacheRenderTexture( nullptr, Meta, EnableMips );
 	};
 	return SafeCall( Function, __func__, -1 );
 }
@@ -493,7 +474,7 @@ void TCache::WritePixels()
 			//auto TextureMode = Directx::TTextureMode::WriteOnly;
 			static auto TextureMode = Directx::TTextureMode::RenderTarget;
 			//auto TextureMode = Directx::TTextureMode::GpuOnly;
-			mAllocatedTexture.reset(new Directx::TTexture(mTextureMeta, *DirectxContext, TextureMode ));
+			mAllocatedTexture.reset(new Directx::TTexture(mTextureMeta, *DirectxContext, TextureMode, mEnableMips ));
 		}
 
 		auto RowFirst = mPendingBytes->mRowsWritten;

@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
-using System.Collections;					// required for Coroutines
-using System.Runtime.InteropServices;		// required for DllImport
-using System;								// requred for IntPtr
+using System.Collections;                   // required for Coroutines
+using System.Runtime.InteropServices;       // required for DllImport
+using System;                               // requred for IntPtr
 using System.Text;
 using System.Collections.Generic;
 
@@ -9,7 +9,7 @@ using System.Collections.Generic;
 /// <summary>
 ///	Low level interface
 /// </summary>
-public static class PopWritePixels 
+public static class PopWritePixels
 {
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
 	private const string PluginName = "PopWritePixels";
@@ -21,8 +21,8 @@ public static class PopWritePixels
 	private static extern int AllocCacheTexture2D(IntPtr TexturePtr, int Width, int Height, TextureFormat PixelFormat);
 
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
-	private static extern int AllocCacheTexture(int Width, int Height, TextureFormat PixelFormat);
-	
+	private static extern int AllocCacheTexture(int Width, int Height, TextureFormat PixelFormat, bool EnableMips);
+
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
 	private static extern void ReleaseCache(int Cache);
 
@@ -42,16 +42,16 @@ public static class PopWritePixels
 	private static extern IntPtr GetWritePixelsToCacheFunc();
 
 	[DllImport(PluginName, CallingConvention = CallingConvention.Cdecl)]
-	private static extern void SetWriteRowsPerFrame(int Cache,int RowsPerFrame);
-	
+	private static extern void SetWriteRowsPerFrame(int Cache, int RowsPerFrame);
+
 
 
 
 	public class JobCache
 	{
-		int?		CacheIndex = null;
-		IntPtr		TexturePtr;
-		IntPtr		PluginFunction;
+		int? CacheIndex = null;
+		IntPtr TexturePtr;
+		IntPtr PluginFunction;
 		Camera.CameraCallback IssueEventCallback = null;
 
 		int RowCount = -1;
@@ -71,10 +71,10 @@ public static class PopWritePixels
 			PluginFunction = GetWritePixelsToCacheFunc();
 		}
 
-		public JobCache(int Width,int Height,TextureFormat TextureFormat)
+		public JobCache(int Width, int Height, TextureFormat TextureFormat, bool GenerateMips)
 		{
 			//	gr: replace format with channels?
-			CacheIndex = AllocCacheTexture( Width, Height, TextureFormat );
+			CacheIndex = AllocCacheTexture(Width, Height, TextureFormat, GenerateMips);
 			if (CacheIndex == -1)
 				throw new System.Exception("Failed to allocate cache index");
 
@@ -96,7 +96,7 @@ public static class PopWritePixels
 		}
 
 		//	queue a write update
-		public void QueueUpdate(Camera AfterCamera=null)
+		public void QueueUpdate(Camera AfterCamera = null)
 		{
 			//	queue a write
 			if (AfterCamera != null)
@@ -115,7 +115,7 @@ public static class PopWritePixels
 				GL.IssuePluginEvent(PluginFunction, CacheIndex.Value);
 			}
 		}
-		
+
 		public void QueueWrite(System.IntPtr Bytes, int Bytes_Length, bool Copy = false, Camera AfterCamera = null)
 		{
 			//	todo: make copy of bytes here, but it'll be slow
@@ -126,10 +126,10 @@ public static class PopWritePixels
 			if (!QueueWritePixels(CacheIndex.Value, Bytes, Bytes_Length))
 				throw new System.Exception("SetCacheBytes returned error");
 
-			QueueUpdate(AfterCamera);			
+			QueueUpdate(AfterCamera);
 		}
 
-		public void QueueWrite(byte[] Bytes,bool Copy=false,Camera AfterCamera=null)
+		public void QueueWrite(byte[] Bytes, bool Copy = false, Camera AfterCamera = null)
 		{
 			//	todo: make copy of bytes here, but it'll be slow
 			//			we can pin/get GC handle for byte[] but intptr won't work that way
@@ -140,19 +140,23 @@ public static class PopWritePixels
 				throw new System.Exception("SetCacheBytes returned error");
 
 			//	queue a write
-			if (AfterCamera != null) {
-				if (IssueEventCallback == null) {
+			if (AfterCamera != null)
+			{
+				if (IssueEventCallback == null)
+				{
 					IssueEventCallback = (c) => {
-						if ( c == AfterCamera )
-							GL.IssuePluginEvent (PluginFunction, CacheIndex.Value);
+						if (c == AfterCamera)
+							GL.IssuePluginEvent(PluginFunction, CacheIndex.Value);
 					};
 					Camera.onPostRender += IssueEventCallback;
 				}
-			} else {
-				GL.IssuePluginEvent (PluginFunction, CacheIndex.Value);
+			}
+			else
+			{
+				GL.IssuePluginEvent(PluginFunction, CacheIndex.Value);
 			}
 		}
-		
+
 		public float GetProgress()
 		{
 			var RowsWritten = GetRowsWritten(CacheIndex.Value);
@@ -163,7 +167,7 @@ public static class PopWritePixels
 			return RowsWritten / (float)RowCount;
 		}
 
-		public bool	HasFinished()
+		public bool HasFinished()
 		{
 			var RowsWritten = GetRowsWritten(CacheIndex.Value);
 
@@ -179,7 +183,7 @@ public static class PopWritePixels
 			return false;
 		}
 
-		public Texture GetTexture(bool MipMap,bool LinearFilter)
+		public Texture GetTexture(bool MipMap, bool LinearFilter)
 		{
 			var TexturePtr = GetCacheTexture(CacheIndex.Value);
 			//	catch this, as it crashes unity
@@ -192,7 +196,7 @@ public static class PopWritePixels
 			return t;
 		}
 
-		public void	Release()
+		public void Release()
 		{
 			//	gr: check we don't release whilst still using data
 			if (IssueEventCallback != null)
@@ -208,7 +212,7 @@ public static class PopWritePixels
 		}
 	}
 
-	public static JobCache WritePixelsAsync(Texture texture,byte[] Pixels,Camera AfterCamera=null)
+	public static JobCache WritePixelsAsync(Texture texture, byte[] Pixels, Camera AfterCamera = null)
 	{
 		/*
 		if ( texture is RenderTexture )
@@ -218,10 +222,10 @@ public static class PopWritePixels
 			return Job;
 		}
 		*/
-		if ( texture is Texture2D )
+		if (texture is Texture2D)
 		{
-			var Job = new JobCache( texture as Texture2D );
-			Job.QueueWrite(Pixels,AfterCamera);
+			var Job = new JobCache(texture as Texture2D);
+			Job.QueueWrite(Pixels, AfterCamera);
 			return Job;
 		}
 
@@ -229,17 +233,17 @@ public static class PopWritePixels
 	}
 
 
-	public static JobCache WritePixelsAsync(int Width, int Height, TextureFormat Format, byte[] Pixels, Camera AfterCamera = null)
+	public static JobCache WritePixelsAsync(int Width, int Height, TextureFormat Format, bool GenerateMips, byte[] Pixels, Camera AfterCamera = null)
 	{
-		var Job = new JobCache(Width, Height, Format);
+		var Job = new JobCache(Width, Height, Format, GenerateMips);
 		Job.QueueWrite(Pixels, AfterCamera);
 		return Job;
 	}
 
-	public static JobCache WritePixelsAsync(int Width, int Height, TextureFormat Format,System.IntPtr PixelBytes, int PixelBytesLength, Camera AfterCamera = null)
+	public static JobCache WritePixelsAsync(int Width, int Height, TextureFormat Format, bool GenerateMips, System.IntPtr PixelBytes, int PixelBytesLength, Camera AfterCamera = null)
 	{
-		var Job = new JobCache(Width, Height, Format);
-		Job.QueueWrite(PixelBytes, PixelBytesLength,AfterCamera);
+		var Job = new JobCache(Width, Height, Format, GenerateMips);
+		Job.QueueWrite(PixelBytes, PixelBytesLength, AfterCamera);
 		return Job;
 	}
 
