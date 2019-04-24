@@ -50,14 +50,20 @@ public static class PopWritePixels
 	public class JobCache
 	{
 		int? CacheIndex = null;
-		IntPtr TexturePtr;
 		IntPtr PluginFunction;
 		Camera.CameraCallback IssueEventCallback = null;
 
-		int RowCount = -1;
+		int? RowCount = null;	//	store height/row count for progress counter
+
+		//	updating existing texture
+		IntPtr TexturePtr;
+
+		//	new texture
 		int? NewWidth = null;
 		int? NewHeight = null;
 		TextureFormat? NewFormat = null;
+		Texture2D NewTexture = null;
+		bool? NewTextureMips = null;
 
 		public JobCache(Texture2D texture)
 		{
@@ -78,6 +84,7 @@ public static class PopWritePixels
 			if (CacheIndex == -1)
 				throw new System.Exception("Failed to allocate cache index");
 
+			NewTextureMips = GenerateMips;
 			RowCount = Height;
 			NewWidth = Width;
 			NewHeight = Height;
@@ -183,21 +190,35 @@ public static class PopWritePixels
 			return false;
 		}
 
-		public Texture GetTexture(bool MipMap, bool LinearFilter)
+		public Texture GetTexture(bool LinearFilter)
 		{
+			//	already created
+			if (NewTexture)
+				return NewTexture;
+
 			var TexturePtr = GetCacheTexture(CacheIndex.Value);
-			//	catch this, as it crashes unity
+			//	catch this, as it crashes unity if we create textures with it
 			if (TexturePtr == IntPtr.Zero)
 				throw new System.Exception("Cache texture is null");
 
-			Debug.Log("New TexturePtr = " + TexturePtr);
-			var t = Texture2D.CreateExternalTexture(NewWidth.Value, NewHeight.Value, NewFormat.Value, MipMap, LinearFilter, TexturePtr);
-			//t.UpdateExternalTexture(TexturePtr);
-			return t;
+			//	create new texture
+			NewTexture = Texture2D.CreateExternalTexture(NewWidth.Value, NewHeight.Value, NewFormat.Value, NewTextureMips.Value, LinearFilter, TexturePtr);
+			return NewTexture;
 		}
 
 		public void Release()
 		{
+			//	release unity's texture before we destroy the texture/shader view
+			if (NewTexture)
+			{
+				//	update to zero, will crash on dx11
+				//	metal it seems from googling needs an explicit release.
+				//t.UpdateExternalTexture(System.IntPtr.Zero);
+				//	delete unity's texture and we're safe to free resources (texture will go black)
+				Texture2D.Destroy(NewTexture);
+				NewTexture = null;
+			}
+
 			//	gr: check we don't release whilst still using data
 			if (IssueEventCallback != null)
 			{
@@ -207,7 +228,9 @@ public static class PopWritePixels
 
 			if (CacheIndex.HasValue)
 			{
+				//	if we release here with a texture still using the plugin's texture, we may crash!
 				ReleaseCache(CacheIndex.Value);
+				CacheIndex = null;
 			}
 		}
 	}

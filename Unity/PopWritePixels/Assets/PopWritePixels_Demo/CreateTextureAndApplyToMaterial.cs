@@ -125,7 +125,7 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 		{
 			Debug.Log("Finished writing pixels");
 			this.enabled = false;
-			NewTexture = WritePixelsJob.GetTexture(MipMap, TextureFilterMode!=FilterMode.Point);
+			NewTexture = WritePixelsJob.GetTexture( TextureFilterMode!=FilterMode.Point);
 			OnNewTextureCreated(NewTexture);
 			//NewTexture.UpdateExternalTexture();
 
