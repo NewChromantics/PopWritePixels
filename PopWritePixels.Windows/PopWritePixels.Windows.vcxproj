@@ -33,7 +33,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\Source\SoyLib\src\SoyEvent.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\SoyFilesystem.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\SoyGraphics.cpp" />
     <ClCompile Include="..\Source\SoyLib\src\SoyMediaFormat.cpp" />
@@ -69,7 +68,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="..\Source\SoyLib\src\SoyEvent.h" />
     <ClInclude Include="..\Source\SoyLib\src\SoyFilesystem.h" />
     <ClInclude Include="..\Source\SoyLib\src\SoyGraphics.h" />
     <ClInclude Include="..\Source\SoyLib\src\SoyMediaFormat.h" />

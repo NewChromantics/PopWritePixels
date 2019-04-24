@@ -4,18 +4,14 @@
 #include <vector>
 #include <sstream>
 #include <algorithm>
-#include "TStringBuffer.hpp"
-#include <SoyUnity.h>
-
 
 
 int Unity::GetPluginEventId()
 {
-	return 0xaabb22;
+	return 0xdefdef;
 }
 
 bool Unity::IsDebugPluginEventEnabled()
 {
 	return false;
 }
-

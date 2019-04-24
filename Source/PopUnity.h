@@ -15,6 +15,3 @@
 #endif
 
 #include <SoyUnity.h>
-
-__export const char*		PopDebugString();
-__export void				ReleaseDebugString(const char* String);

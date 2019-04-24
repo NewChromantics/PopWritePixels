@@ -67,9 +67,6 @@
     <ClCompile Include="..\Source\SoyLib\src\SoyUnity.cpp">
       <Filter>Source Files\SoyLib</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\SoyLib\src\SoyEvent.cpp">
-      <Filter>Source Files\SoyLib</Filter>
-    </ClCompile>
     <ClCompile Include="..\Source\SoyLib\src\SoyThread.cpp">
       <Filter>Source Files\SoyLib</Filter>
     </ClCompile>
@@ -163,9 +160,6 @@
       <Filter>Source Files\SoyLib</Filter>
     </ClInclude>
     <ClInclude Include="..\Source\SoyLib\src\SoyUnity.h">
-      <Filter>Source Files\SoyLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Source\SoyLib\src\SoyEvent.h">
       <Filter>Source Files\SoyLib</Filter>
     </ClInclude>
     <ClInclude Include="..\Source\SoyLib\src\SoyThread.h">
