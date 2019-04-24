@@ -14,6 +14,7 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 	public Texture NewTexture;
 	public bool CreateTextureInPlugin = true;
 	PopWritePixels.JobCache WritePixelsJob;
+	public bool GenerateMips = true;
 	byte[] PixelBytes;
 
 	byte[] GeneratePixelBytes(int Width,int Height,int ComponentCount,Color32[] PixelColours)
@@ -96,7 +97,7 @@ public class CreateTextureAndApplyToMaterial : MonoBehaviour {
 
 		if (CreateTextureInPlugin)
 		{
-			WritePixelsJob = PopWritePixels.WritePixelsAsync(TextureWidth, TextureHeight, TextureFormat, PixelBytes);
+			WritePixelsJob = PopWritePixels.WritePixelsAsync(TextureWidth, TextureHeight, TextureFormat, GenerateMips, PixelBytes);
 		}
 		else
 		{
