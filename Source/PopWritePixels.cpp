@@ -330,12 +330,22 @@ void TCache::WritePixels()
 			
 			//	need a texture resource view for unity
 			auto& Device = DirectxContext->LockGetDevice();
-			auto& Resource = mAllocatedTexture->GetResourceView(Device);
 
-			auto& Context = DirectxContext->LockGetContext();
-			Context.GenerateMips(&Resource);
-
-			DirectxContext->Unlock();
+			//	only generate mip maps on last row
+			//	gr: we also generate on first, to produce the resource view early
+			bool GenerateMipMaps = false;
+			if ( RowLast == mTextureMeta.GetHeight() )
+				GenerateMipMaps = true;
+			if ( RowFirst == 0 )
+				GenerateMipMaps = true;
+			
+			if ( GenerateMipMaps )
+			{
+				auto& Resource = mAllocatedTexture->GetResourceView(Device);
+				auto& Context = DirectxContext->LockGetContext();
+				Context.GenerateMips(&Resource);
+				DirectxContext->Unlock();
+			}
 			DirectxContext->Unlock();
 		}
 		else
